@@ -62,33 +62,32 @@ GOOS=windows GOARCH=arm64 go build -o websync-arm64.exe
 ./websync -h
 ```
 
+### Show version
+
+```bash
+./websync -version
+```
+
 ### Check for app updates (GitHub releases)
 
 `websync` can query GitHub releases using `github.com/amarillier/go-update-checker`.
 
 ```bash
-./websync \
-  -check-updates \
-  -update-owner "amarillier" \
-  -update-repo "KrankyBearWebSync" \
-  -update-url "https://github.com/amarillier/KrankyBearWebSync/releases" \
-  -url "https://example.com/" \
-  -ext ".pdf"
+./websync -check-updates
 ```
 
 Update-check flags:
 
 - `-check-updates`: enable update checks
-- `-update-owner`: GitHub owner/user (default: `amarillier`)
-- `-update-repo`: GitHub repo name (required when update checking is enabled)
-- `-update-url`: optional releases/download URL shown in update message
 - `-update-min-days`: minimum days between API checks (default: `1`, use `0` to always check)
 - `-update-verbose`: verbose output from the update checker library
 
 Notes:
 
+- `-check-updates` can run by itself and exits after checking, with no crawl/download arguments required.
+- The app uses built-in repo metadata (`amarillier/KrankyBearWebSync` + releases URL), so users do not need extra update config flags.
 - Update checks use GitHub's latest release endpoint, so this is most useful after your repo exists and has SemVer-style release tags.
-- If update-check flags are invalid, `websync` logs a warning and continues the normal crawl/download flow.
+- If `-check-updates` is combined with crawl flags like `-url`, update check runs first and then normal crawl/download continues.
 
 ### Basic PDF download (recursive)
 

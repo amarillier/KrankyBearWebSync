@@ -27,6 +27,11 @@ const defaultUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleW
 const (
 	appVersion = "0.1.0" // see FyneApp.toml // (if we ever add a GUI!)
 	appID      = "com.github.amarillier.KrankyBearWebSync"
+	appAuthor  = "Allan Marillier"
+
+	updateRepoOwner = "amarillier"
+	updateRepoName  = "KrankyBearWebSync"
+	updateRepoURL   = "https://github.com/amarillier/KrankyBearWebSync/releases"
 )
 
 var appName = "KrankyBearWebSync"
@@ -99,18 +104,26 @@ func main() {
 	includePath := flag.String("include-path", "", "Only download paths containing this substring")
 	excludePath := flag.String("exclude-path", "", "Skip paths containing this substring")
 	jsonLogs := flag.Bool("json", false, "Emit JSON logs")
+	showVersion := flag.Bool("version", false, "Print app version and exit")
 	checkUpdates := flag.Bool("check-updates", false, "Check GitHub releases for a newer app version")
-	updateOwner := flag.String("update-owner", "amarillier", "GitHub owner/user for update checks")
-	updateRepo := flag.String("update-repo", "", "GitHub repo name for update checks (required with -check-updates)")
-	updateURL := flag.String("update-url", "", "Optional releases/download URL shown when an update is found")
 	updateMinDays := flag.Int("update-min-days", 1, "Minimum days between GitHub update checks (0 = always)")
 	updateVerbose := flag.Bool("update-verbose", false, "Enable verbose output from update checker")
 	flag.Parse()
 
 	log := &logger{json: *jsonLogs}
-	maybeCheckForUpdates(log, *checkUpdates, *updateOwner, *updateRepo, *updateURL, *updateMinDays, *updateVerbose)
+	if *showVersion {
+		fmt.Printf("%s %s, from %s\n", appName, appVersion, appAuthor)
+		return
+	}
+	hasDownloadInputs := strings.TrimSpace(*baseURL) != "" || strings.TrimSpace(*filesFlag) != "" || strings.TrimSpace(*fileListFlag) != ""
+	if *checkUpdates {
+		maybeCheckForUpdates(log, *updateMinDays, *updateVerbose)
+		if !hasDownloadInputs {
+			return
+		}
+	}
 
-	if strings.TrimSpace(*baseURL) == "" && strings.TrimSpace(*filesFlag) == "" && strings.TrimSpace(*fileListFlag) == "" {
+	if !hasDownloadInputs {
 		log.event("error", "provide at least one of -url, -files, or -file-list", nil)
 		os.Exit(1)
 	}
@@ -760,28 +773,21 @@ func max(a, b int) int {
 	return b
 }
 
-func maybeCheckForUpdates(log *logger, enabled bool, owner, repo, downloadURL string, minDays int, verbose bool) {
-	if !enabled {
-		return
-	}
-
-	owner = strings.TrimSpace(owner)
-	repo = strings.TrimSpace(repo)
-	downloadURL = strings.TrimSpace(downloadURL)
-
-	if err := validateUpdateCheckConfig(owner, repo, minDays); err != nil {
+func maybeCheckForUpdates(log *logger, minDays int, verbose bool) {
+	if err := validateUpdateCheckConfig(minDays); err != nil {
 		log.event("warn", "skipping update check", map[string]any{"err": err.Error()})
 		return
 	}
 
-	log.event("info", "checking for app updates", map[string]any{"repo": owner + "/" + repo})
-	uc := updatechecker.New(owner, repo, appName, downloadURL, minDays, verbose)
+	repoSlug := updateRepoOwner + "/" + updateRepoName
+	log.event("info", "checking for app updates", map[string]any{"repo": repoSlug})
+	uc := updatechecker.New(updateRepoOwner, updateRepoName, appName, updateRepoURL, minDays, verbose)
 	uc.CheckForUpdate(appVersion)
 
 	if uc.UpdateAvailable {
-		log.event("warn", "application update available", map[string]any{"repo": owner + "/" + repo})
+		log.event("warn", "application update available", map[string]any{"repo": repoSlug})
 	} else {
-		log.event("info", "application is up to date", map[string]any{"repo": owner + "/" + repo})
+		log.event("info", "application is up to date", map[string]any{"repo": repoSlug})
 	}
 
 	if strings.TrimSpace(uc.Message) != "" {
@@ -789,10 +795,7 @@ func maybeCheckForUpdates(log *logger, enabled bool, owner, repo, downloadURL st
 	}
 }
 
-func validateUpdateCheckConfig(owner, repo string, minDays int) error {
-	if owner == "" || repo == "" {
-		return fmt.Errorf("both -update-owner and -update-repo are required when -check-updates is enabled")
-	}
+func validateUpdateCheckConfig(minDays int) error {
 	if minDays < 0 {
 		return fmt.Errorf("-update-min-days cannot be negative")
 	}
