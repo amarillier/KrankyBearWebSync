@@ -1,0 +1,48 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test files
+test/*
+test.log
+test-*.log
+urls.txt
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# git setup stuff
+git.sh
+git.txt
+
+# Update checker data
+latestcheck.json
+
+## Build artifacts
+bin/.DS_Store
+Resources/
+dist/
+bin/
+KrankyBearTemplate.app/
+vendor/*
+websync
+sync*.sh
+compile-all.sh
+compile-windows-ssh.sh
+rename-app.sh
+rsrc_windows_amd64.syso
+
+# ALLOWED
+!bin/*
+!installers/*
+!Resources/*
+!Inno/*
+

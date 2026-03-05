@@ -1,0 +1,6 @@
+# One URL/path per line. Blank lines and lines starting with # are ignored.
+# Absolute URL example:
+https://www.stevedgood.com/rx.pdf
+
+# Relative path example (requires running with -url):
+/docs/example.pdf
